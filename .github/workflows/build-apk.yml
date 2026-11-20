@@ -39,6 +39,41 @@ jobs:
           npx cap add android
           npx cap copy android
 
+      - name: Generar icono oficial en fondo morado para Android
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y imagemagick
+
+          mkdir -p /tmp/icon_work
+          if [ -f "icon.png" ]; then
+            cp icon.png /tmp/icon_work/logo_raw.png
+          else
+            curl -fsSL "https://i.postimg.cc/t4fJptrQ/BCV-20261120-041842-0000.png" -o /tmp/icon_work/logo_raw.png
+          fi
+
+          # Redimensiona el logo y lo centra sobre un lienzo cuadrado morado (#9333ea)
+          convert /tmp/icon_work/logo_raw.png -resize 720x720 -background "#9333ea" -gravity center -extent 1024x1024 -alpha off /tmp/icon_work/icon_morado_1024.png
+
+          # Elimina xml adaptativos que puedan forzar fondo blanco o azul de plantilla
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26
+
+          declare -A DENSITIES=(
+            ["mipmap-mdpi"]=48
+            ["mipmap-hdpi"]=72
+            ["mipmap-xhdpi"]=96
+            ["mipmap-xxhdpi"]=144
+            ["mipmap-xxxhdpi"]=192
+          )
+
+          for dir in "${!DENSITIES[@]}"; do
+            px="${DENSITIES[$dir]}"
+            target="android/app/src/main/res/$dir"
+            mkdir -p "$target"
+            convert /tmp/icon_work/icon_morado_1024.png -resize "${px}x${px}" "$target/ic_launcher.png"
+            convert /tmp/icon_work/icon_morado_1024.png -resize "${px}x${px}" "$target/ic_launcher_round.png"
+            convert /tmp/icon_work/logo_raw.png -resize "${px}x${px}" -background "#9333ea" -gravity center -extent "${px}x${px}" -alpha off "$target/ic_launcher_foreground.png"
+          done
+
       - name: Asegurar permiso de cámara en AndroidManifest.xml
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
