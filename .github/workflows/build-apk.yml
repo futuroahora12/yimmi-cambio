@@ -23,7 +23,7 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      -       - name: Preparar carpeta www con index.html
+      - name: Preparar carpeta www con index.html
         run: |
           mkdir -p www
           if [ -f "index.html" ]; then
