@@ -23,28 +23,30 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      - name: Configurar Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: "34"
-          build-tools: "34.0.0"
-
-      - name: Aceptar licencias Android SDK
-        run: |
-          yes | sdkmanager --licenses || true
-
       - name: Preparar carpeta www con index.html
         run: |
           mkdir -p www
           cp index.html www/index.html
 
-      - name: Inicializar y sincronizar Capacitor Android
+      - name: Instalar dependencias y crear proyecto Android con Capacitor
         run: |
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "Yimmi Kambio" "com.futuroahora.yimmikambio" --web-dir=www
+          npm install
           npx cap add android
           npx cap copy android
+
+      - name: Asegurar permiso de cámara en AndroidManifest.xml
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST" ] && ! grep -q "android.permission.CAMERA" "$MANIFEST"; then
+            sed -i 's/<uses-permission android:name="android.permission.INTERNET" \/>/<uses-permission android:name="android.permission.INTERNET" \/>\n    <uses-permission android:name="android.permission.CAMERA" \/>/' "$MANIFEST"
+          fi
+
+      - name: Preparar SDK y aceptar licencias en el runner
+        run: |
+          export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          export ANDROID_HOME="$ANDROID_SDK_ROOT"
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses || yes | sdkmanager --licenses || true
 
       - name: Compilar APK Debug
         run: |
