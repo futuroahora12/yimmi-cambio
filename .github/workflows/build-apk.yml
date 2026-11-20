@@ -23,10 +23,15 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      - name: Preparar carpeta www con index.html
+      -       - name: Preparar carpeta www con index.html
         run: |
           mkdir -p www
-          cp index.html www/index.html
+          if [ -f "index.html" ]; then
+            cp index.html www/index.html
+          elif [ ! -f "www/index.html" ]; then
+            echo "No se encontro index.html en la raiz ni en www/index.html"
+            exit 1
+          fi
 
       - name: Instalar dependencias y crear proyecto Android con Capacitor
         run: |
